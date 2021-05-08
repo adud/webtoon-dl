@@ -1,1 +1,14 @@
-img { display: block; }
+img {
+    display: block;
+    margin: auto;
+    max-width: 100%;
+}
+
+.paginate {
+    text-align: center;
+    word-spacing: 200%;
+}
+
+#origin {
+    display: none;
+} 

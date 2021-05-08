@@ -30,15 +30,45 @@ def guess_files(d):
             if splitext(basename(x))[0].isdecimal()]
 
 
-def make_episode(flist, title, css):
+def make_turner(*links):
+    """return a soup containing a link to the next/prev page and
+    the index, if None is given, the link becomes invisible
+    takes 3 args:
+    prev: the address of the previous page or None
+    top: the address of the index or None
+    next: the address of the next page or None"""
+    
+    soup = BeautifulSoup()
+    soup.append(soup.new_tag("div", attrs={"class": "paginate"}))
+    for link, text in zip(links, ["Prev", "Top", "Next"]):
+        tag = soup.new_tag('a')
+        if link is None:
+            tag['style'] = "visibility: hidden"
+        else:
+            tag['href'] = link
+        tag.string = text
+        soup.div.append(tag)
+
+    return soup
+
+
+def make_episode(flist, title, css, page=None):
     """return the soup of a webpage containing an episode
     title: the list of the episodes
-    flist: the list of the images"""
+    flist: the list of the images
+    css: the css file
+    page: add a page turner at the begining and the end of the file
+    a tuplet of 3 args of make_turner"""
     with open(join(DIRNAME, "template.html")) as f:
         soup = BeautifulSoup(f, "html.parser")
     soup.head.title.string = title
     soup.head.link["href"] = css
+    turner = make_turner(*page) if page is not None else ""
+    
+    soup.body.append(turner)
     soup.body.extend([soup.new_tag("img", src=f) for f in flist])
+    soup.body.append(turner)
+
     return soup
 
 
