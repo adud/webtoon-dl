@@ -1,0 +1,11 @@
+* datastructures
+** create python datastructures for episodes, comics
+** formally describe local webpages to use them to store above datastructs
+** create a scraper object (I will probably soon be asked to adapt this to Tapas.io)
+* caching of downloaded webpages
+* update/complete comics
+* refactorize generator and getter to have one cmdline (or 2 with symlinks and arg[0])?
+** DWIM mode: rethink arguments to make the cmdline intuitive
+   e.g: to download the whole comic,
+   `webtoon-dl <comic-url>` `webtoon-dl -e <any-episode-url>` 
+
