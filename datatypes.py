@@ -8,7 +8,7 @@ import sys
 from urllib.request import Request, urlopen
 from shutil import copyfileobj
 from os import makedirs
-from os.path import join, realpath, dirname  # , isfile, isdir, exists
+from os.path import join, realpath, dirname, isfile  # , isdir, exists
 from http.cookiejar import MozillaCookieJar
 from bs4 import BeautifulSoup, FeatureNotFound
 
@@ -49,12 +49,14 @@ def mkdir(*args, **kwargs):
 
 class Episode():
     """internal representation of an episode"""
-    def __init__(self, browser, title="", name="", origin="", img_list=None):
+    def __init__(self, browser, title="", name="", origin="", img_list=None,
+                 local=""):
         self.browser = browser
         self.title = title
         self.name = name
         self.origin = origin
         self.img_list = img_list
+        self.local = local
 
     def make_turner(self, *links):
         """return a soup containing a link to the next/prev page and
@@ -77,19 +79,30 @@ class Episode():
 
         return soup
 
-    def generate_soup(self, page):
-        """generate a local soup from the episode"""
+    def generate_page(self, filename="index.html", pager=None):
+        """generate a local page from the episode"""
+
+        # gave up on image granularity
+
         with open(join(DIRNAME, "template-internal.html")) as f:
             soup = BeautifulSoup(f, "html.parser")
 
         soup.head.title.string = self.title
 
-        turner = self.make_turner(*page) if page is not None else ""
-        soup.body.append(turner)
-        soup.body.extend([soup.new_tag("img", src=f) for f in self.img_list])
+        turner = self.make_turner(*pager) if pager is not None else ""
         soup.body.append(turner)
 
-        return soup
+        for c, url in enumerate(self.img_list):
+            target = join(self.local, "{:03}.jpg".format(c))
+            if isfile(target):
+                log("Image {}  is already dowloaded".format(c))
+            else:
+                self.browser.download_image(url, target)
+            soup.body.append(soup.new_tag("img", src=target))
+
+        soup.body.append(turner)
+        with open(join(self.local, filename), "w") as f:
+            f.write(soup.prettify())
 
     @classmethod
     def from_local_episode(cls, soup):
@@ -133,10 +146,10 @@ class Browser():
     # def episode2comic(self, path):
     #     """given an episode path, returns the comic path"""
 
-    def download_picture(self, url, outfile):
-        """download a picture from the site
-        url: the url of the picture
-        outfile: the output file"""
+    def download_image(self, url, target):
+        """download a image from the site
+        url: the url of the image
+        target: the output file name"""
         raise NotImplementedError
 
     def get_soup(self, url):
@@ -193,17 +206,17 @@ class WebToonBrowser(Browser):
                 copyfileobj(response, outfile)
         return
 
-    def get_image_urls(self, soup, qual=""):
+    def get_image_urls(self, soup):
         """Retrieve all image URLs to download from an episode soup
         qual: the quality in the webtoon query"""
-        return [img["data-url"].replace("?type=q90", qual)
+        return [img["data-url"].replace("?type=q90", "")
                 for img in soup(class_="_images")]
 
     def get_ep_name(self, soup):
         """Retrieve the name of an episode from an episode soup"""
         return soup.title.string.split("|")[0].strip()
 
-    def get_co_title(self, soup):
+    def get_co_name(self, soup):
         """Retrieve the name of a comic from an episode soup"""
         return soup.title.string.split("|")[1].strip()
 
@@ -211,5 +224,6 @@ class WebToonBrowser(Browser):
 if __name__ == "__main__":
     print(FILENAME)
     truc = WebToonBrowser()
+    soup = truc.get_soup(TEST)
     ep = truc.episode(TEST)
     print(ep.title)
