@@ -6,6 +6,5 @@
 * update/complete comics
 * refactorize generator and getter to have one cmdline (or 2 with symlinks and arg[0])?
 ** DWIM mode: rethink arguments to make the cmdline intuitive
-   e.g: to download the whole comic,
-   `webtoon-dl <comic-url>` `webtoon-dl -e <any-episode-url>` 
+   e.g: to download the whole comic, prefer `webtoon-dl <comic-url>` than `webtoon-dl -e <any-episode-url>` 
 
