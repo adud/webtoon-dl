@@ -13,6 +13,7 @@ from http.cookiejar import MozillaCookieJar
 from bs4 import BeautifulSoup, FeatureNotFound
 
 FILENAME = sys.argv[0]
+DIRNAME = dirname(sys.argv[0])
 VERB = True
 DRY = False
 
@@ -55,8 +56,40 @@ class Episode():
         self.origin = origin
         self.img_list = img_list
 
-    def generate_soup(self, style):
+    def make_turner(self, *links):
+        """return a soup containing a link to the next/prev page and
+        the index, if None is given, the link becomes invisible
+        takes 3 args:
+        prev: the address of the previous page or None
+        top: the address of the index or None
+        next: the address of the next page or None"""
+
+        soup = BeautifulSoup()
+        soup.append(soup.new_tag("div", attrs={"class": "paginate"}))
+        for link, text in zip(links, ["Prev", "Top", "Next"]):
+            tag = soup.new_tag('a')
+            if link is None:
+                tag['style'] = "visibility: hidden"
+            else:
+                tag['href'] = link
+                tag.string = text
+                soup.div.append(tag)
+
+        return soup
+
+    def generate_soup(self, page):
         """generate a local soup from the episode"""
+        with open(join(DIRNAME, "template-internal.html")) as f:
+            soup = BeautifulSoup(f, "html.parser")
+
+        soup.head.title.string = self.title
+
+        turner = self.make_turner(*page) if page is not None else ""
+        soup.body.append(turner)
+        soup.body.extend([soup.new_tag("img", src=f) for f in self.img_list])
+        soup.body.append(turner)
+
+        return soup
 
     @classmethod
     def from_local_episode(cls, soup):
@@ -76,9 +109,7 @@ class Comic():
         """generate a local soup from the comic
         style: the style to use
         stype: 0 loaded, 1 inlined, 2 put in the episode folder"""
-        
 
-        
     @classmethod
     def from_local_comic(cls, soup):
         """initialize a Comic from the soup of a local comic page"""
@@ -97,7 +128,7 @@ class Browser():
         """create an Episode object from an url"""
         soup = self.get_soup(url)
         return Episode(self, soup.title.string, self.get_ep_name(soup),
-                       url, self.get_image_urls)
+                       url, self.get_image_urls(soup))
 
     # def episode2comic(self, path):
     #     """given an episode path, returns the comic path"""
