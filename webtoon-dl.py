@@ -119,7 +119,7 @@ def get_episodes_urls(soup):
 def download_images(urls, outdir):
     """Download each image in urls to existing directory outdir."""
     referer_header = { "Referer": img_referer }
-
+    
     for c, url in enumerate(urls):
         target = join(outdir, "{:03}.jpg".format(c))
         if isfile(target):
@@ -166,7 +166,7 @@ if __name__ == "__main__":
             args.start = guess_start(args.dir)
 
         for no, url in enumerate(get_episodes_urls(get_soup(args.url))
-                                 [args.start:], start=args.start):
+                                 [args.start - 1:], start=args.start):
             outdir = join(args.dir, "{:03}".format(no))
             mkdir(outdir, exist_ok=True)
             download_episode(url, outdir)
